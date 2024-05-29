@@ -632,19 +632,25 @@ module RAST
             }
           else
             this
-        case StmtExpr(DeclareVar(mod, name, Some(tpe), None), StmtExpr(AssignVar(name2, rhs), last)) =>
-          if name == name2 then
-            var rewriting := StmtExpr(DeclareVar(mod, name, Some(tpe), Some(rhs)), last);
-            assert rewriting.Height() < this.Height() by {
-              assert StmtExpr(AssignVar(name2, rhs), last).Height() ==
-                     1 + max(AssignVar(name2, rhs).Height(), last.Height()) ==
-                     1 + max(1 + rhs.Height(), last.Height());
-              assert this.Height() == 2 + max(1, 1 + max(1 + rhs.Height(), last.Height()));
-              assert rewriting.Height() == 1 + max(1 + rhs.Height(), last.Height());
-            }
-            rewriting
-          else
-            this
+        // Temporarily disabling these because the Dafny->C# code generator
+        // creates an explicit branch for every other data constructor at every nested level,
+        // so this function explodes into over 400 lines of C# and we get
+        // "error CS8078: An expression is too long or complex to compile"
+        // on newer Mac OS'.
+        //
+        // case StmtExpr(DeclareVar(mod, name, Some(tpe), None), StmtExpr(AssignVar(name2, rhs), last)) =>
+        //   if name == name2 then
+        //     var rewriting := StmtExpr(DeclareVar(mod, name, Some(tpe), Some(rhs)), last);
+        //     assert rewriting.Height() < this.Height() by {
+        //       assert StmtExpr(AssignVar(name2, rhs), last).Height() ==
+        //              1 + max(AssignVar(name2, rhs).Height(), last.Height()) ==
+        //              1 + max(1 + rhs.Height(), last.Height());
+        //       assert this.Height() == 2 + max(1, 1 + max(1 + rhs.Height(), last.Height()));
+        //       assert rewriting.Height() == 1 + max(1 + rhs.Height(), last.Height());
+        //     }
+        //     rewriting
+        //   else
+        //     this
         case _ => this
       }
     }
