@@ -48,6 +48,19 @@ public class RustBackend : DafnyExecutableBackend {
     $"{Path.GetFileNameWithoutExtension(dafnyProgramName)}-rust/src";
 
   protected override DafnyWrittenCodeGenerator CreateDafnyWrittenCompiler() {
+    if (!Options.Get(CommonOptionBag.EnforceDeterminism)) {
+      // DEV: This requirement could be lifted in the future if
+      // BoogieGenerator.DefiniteAssignment.cs:
+      // the line
+      //   if (!isGhost && type.HasCompilableValue) {
+      // could become
+      //   if (!isGhost && type.HasCompilableValue && options.DefiniteAssignmentLevel == 1) {
+      // Meaning that the default behavior for fields and array initialization is the same as for local variables:
+      // Auto-init is not supported, fields have to be initialized.
+      
+      throw new UnsupportedInvalidOperationException(
+        "The Rust compiler requires `--enforce-determinism`");
+    }
     return new RustCodeGenerator(Options);
   }
 
@@ -97,7 +110,11 @@ public class RustBackend : DafnyExecutableBackend {
     foreach (var keyValue in ImportFilesMapping(dafnyProgramName)) {
       var fullRustExternName = keyValue.Key;
       var expectedRustName = keyValue.Value;
-      File.Copy(fullRustExternName, Path.Combine(targetDirectory, expectedRustName), true);
+      var targetName = Path.Combine(targetDirectory, expectedRustName);
+      if (fullRustExternName == targetName) {
+        return true;
+      }
+      File.Copy(fullRustExternName, targetName, true);
     }
 
     if (Options.IncludeRuntime) {
